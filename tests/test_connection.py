@@ -1,6 +1,6 @@
-from patchbay.models import Server
-from patchbay.ssh import connection
-from patchbay.ssh.connection import command_string, copy_id_argv, parse_quick_target
+from easyshell.models import Server
+from easyshell.ssh import connection
+from easyshell.ssh.connection import command_string, copy_id_argv, parse_quick_target
 
 
 def test_command_string_with_jump_by_name(monkeypatch):
@@ -22,3 +22,23 @@ def test_quick_target():
     assert (s.user, s.host, s.port) == ("root", "fe80::1", 2222)
     assert parse_quick_target("ssh pi.lan").host == "pi.lan"
     assert parse_quick_target("a b") is None
+
+
+def test_connect_with_control_master(tmp_path):
+    argv = connection.connect_argv(Server(name="a", host="h", user="u"), control_path=tmp_path / "cm-1")
+    assert argv[-1] == "u@h"
+    assert f"ControlPath={tmp_path / 'cm-1'}" in argv
+    assert "ControlMaster=yes" in argv
+
+
+def test_probe_only_tries_keys_and_never_prompts():
+    argv = connection.pubkey_probe_argv(Server(name="a", host="h", port=2222))
+    for opt in ("BatchMode=yes", "PreferredAuthentications=publickey", "ControlPath=none"):
+        assert opt in argv
+    assert argv[-2:] == ["h", "true"]
+
+
+def test_copy_via_master_reuses_socket(tmp_path):
+    argv = connection.copy_id_via_master_argv(Server(name="a", host="h"), "ssh-ed25519 AAAA x", tmp_path / "cm")
+    assert "ControlMaster=no" in argv and f"ControlPath={tmp_path / 'cm'}" in argv
+    assert connection.KEY_ADDED in argv[-1]

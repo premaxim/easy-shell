@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Baut Patchbay als Flatpak – ohne etwas ins (immutable) System zu installieren.
+# Baut easyShell als Flatpak – ohne etwas ins (immutable) System zu installieren.
 # Alles landet in der Benutzer-Installation (--user).
 #
-#   ./build-aux/build-flatpak.sh            # bauen und Bundle dist/patchbay.flatpak erzeugen
+#   ./build-aux/build-flatpak.sh            # bauen und Bundle dist/easyshell.flatpak erzeugen
 #   ./build-aux/build-flatpak.sh --install  # zusätzlich direkt installieren
 set -euo pipefail
 
-APP_ID=io.github.premaxim.Patchbay
+APP_ID=io.github.premaxim.EasyShell
 GNOME=51
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -38,10 +38,10 @@ run flatpak install --user -y --noninteractive flathub "org.gnome.Platform//$GNO
 run "${BUILDER[@]}" --user --force-clean --repo=repo --state-dir=.flatpak-builder build-dir "$APP_ID.json"
 
 mkdir -p dist
-run flatpak build-bundle repo dist/patchbay.flatpak "$APP_ID" --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
-echo "Bundle: dist/patchbay.flatpak"
+run flatpak build-bundle repo dist/easyshell.flatpak "$APP_ID" --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
+echo "Bundle: dist/easyshell.flatpak"
 
 if [ "${1:-}" = "--install" ]; then
-  run flatpak install --user -y --reinstall dist/patchbay.flatpak
+  run flatpak install --user -y --reinstall dist/easyshell.flatpak
   echo "Installiert. Start: flatpak run $APP_ID"
 fi

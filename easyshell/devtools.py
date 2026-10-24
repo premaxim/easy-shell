@@ -1,6 +1,6 @@
-"""Nur für die Entwicklung: Fenster als PNG rendern (PATCHBAY_SCREENSHOT=pfad.png).
+"""Nur für die Entwicklung: Fenster als PNG rendern (EASYSHELL_SCREENSHOT=pfad.png).
 
-Optional: PATCHBAY_SCREENSHOT_SCRIPT = durch Kommas getrennte Schritte,
+Optional: EASYSHELL_SCREENSHOT_SCRIPT = durch Kommas getrennte Schritte,
 z. B. ``connect:NAS,editor,import,search:pi,shortcuts``.
 """
 
@@ -38,12 +38,22 @@ def _scroll_dialog_down(window) -> bool:
     return GLib.SOURCE_REMOVE
 
 
+def _type_into_terminal(window, text: str) -> bool:
+    if text.startswith("@"):  # @datei: Text aus Datei lesen (z. B. ein Test-Passwort)
+        with open(text[1:], encoding="utf-8") as fh:
+            text = fh.read().strip()
+    page = window.tabview.get_selected_page()
+    if page:
+        page.get_child().terminal.feed_child((text + "\r").encode())
+    return GLib.SOURCE_REMOVE
+
+
 def schedule_screenshot(window, path: str) -> None:
-    size = os.environ.get("PATCHBAY_SIZE")
+    size = os.environ.get("EASYSHELL_SIZE")
     if size:
         w, _, h = size.partition("x")
         window.set_default_size(int(w), int(h))
-    steps = [s for s in os.environ.get("PATCHBAY_SCREENSHOT_SCRIPT", "").split(",") if s]
+    steps = [s for s in os.environ.get("EASYSHELL_SCREENSHOT_SCRIPT", "").split(",") if s]
 
     def run_steps():
         for step in steps:
@@ -62,6 +72,9 @@ def schedule_screenshot(window, path: str) -> None:
                 window.activate_action("win.quick-connect", None)
             elif name == "search":
                 window.search.set_text(arg)
+            elif name == "type":  # type:<verzögerung ms>:<text> – tippt ins aktive Terminal, mit Enter
+                delay, _, text = arg.partition(":")
+                GLib.timeout_add(int(delay), _type_into_terminal, window, text)
             elif name == "scrolldown":
                 GLib.timeout_add(700, _scroll_dialog_down, window)
         return GLib.SOURCE_REMOVE
@@ -72,4 +85,4 @@ def schedule_screenshot(window, path: str) -> None:
         return GLib.SOURCE_REMOVE
 
     GLib.timeout_add(600, run_steps)
-    GLib.timeout_add(int(os.environ.get("PATCHBAY_SCREENSHOT_DELAY", "2500")), shoot)
+    GLib.timeout_add(int(os.environ.get("EASYSHELL_SCREENSHOT_DELAY", "2500")), shoot)

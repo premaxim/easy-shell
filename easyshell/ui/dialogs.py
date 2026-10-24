@@ -35,7 +35,7 @@ class ImportDialog(Adw.Dialog):
                 "Einträge wie „Host *“ gelten für alle Server und werden nicht übernommen."
             )
         else:
-            group.set_description("Wähle aus, welche Hosts Patchbay übernehmen soll. Die Datei bleibt unverändert.")
+            group.set_description("Wähle aus, welche Hosts easyShell übernehmen soll. Die Datei bleibt unverändert.")
 
         for cand in candidates:
             exists = store.contains_equivalent(cand.host, cand.port, cand.user) or store.find_by_name(cand.alias)

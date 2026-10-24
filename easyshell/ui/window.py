@@ -6,6 +6,7 @@ from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk, Pango
 
 from ..models import Server
 from ..ssh import connection
+from ..ssh.autokey import AutoKeyWatch, Outcome
 from ..ssh.status import Status, StatusMonitor
 from ..storage import ServerStore
 from . import theme
@@ -15,9 +16,9 @@ from .terminal import TerminalPage
 from .widgets import ServerRow, group_header, stripe_icon
 
 
-class PatchbayWindow(Adw.ApplicationWindow):
+class EasyShellWindow(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application, store: ServerStore, app_theme: theme.Theme):
-        super().__init__(application=app, title="Patchbay", default_width=1180, default_height=760)
+        super().__init__(application=app, title="easyShell", default_width=1180, default_height=760)
         self.set_size_request(360, 360)
         self.store = store
         self.theme = app_theme
@@ -66,8 +67,9 @@ class PatchbayWindow(Adw.ApplicationWindow):
         menu = Gio.Menu()
         menu.append("Aus ~/.ssh/config importieren", "win.import")
         menu.append("Terminal-Schrift ändern…", "win.terminal-font")
+        menu.append("Key nach Passwort-Login übertragen", "win.auto-copy-key")
         menu.append("Tastenkürzel", "win.shortcuts")
-        menu.append("Über Patchbay", "win.about")
+        menu.append("Über easyShell", "win.about")
         bar.append(Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu, tooltip_text="Hauptmenü",
                                   valign=Gtk.Align.CENTER, css_classes=["flat"]))
         view.add_top_bar(Gtk.WindowHandle(child=bar))
@@ -252,17 +254,33 @@ class PatchbayWindow(Adw.ApplicationWindow):
 
     def connect_server(self, server: Server, *, remember: bool = True) -> None:
         if not connection.ssh_available():
-            self.toast("Kein ssh-Client gefunden. Installiere OpenSSH oder starte Patchbay als Flatpak.")
+            self.toast("Kein ssh-Client gefunden. Installiere OpenSSH oder starte easyShell als Flatpak.")
             return
-        argv = connection.connect_argv(server, self.store.find_by_name)
-        target = f"{server.host}:{server.port}"
-        self._open_tab(server, argv, server.name, target)
+        resolve = self.store.find_by_name
+        session: dict = {}
+
+        def make_argv() -> list[str]:
+            # Wird bei jedem (Neu-)Verbinden aufgerufen: frischer Socket, frische Beobachtung.
+            if session.get("watch"):
+                session["watch"].cancel()
+                session["watch"] = None
+            if not (self.store.settings.get("auto_copy_key") and connection.multiplexing_available()):
+                return connection.connect_argv(server, resolve)
+            path = connection.new_control_path()
+            session["watch"] = AutoKeyWatch(
+                server, path, resolve,
+                alive=lambda: "page" in session and session["page"].alive(),
+                report=self._auto_key_report,
+            )
+            return connection.connect_argv(server, resolve, path)
+
+        session["page"] = self._open_tab(server, make_argv, server.name, f"{server.host}:{server.port}")
         if remember and self.store.get(server.id):
             self.store.mark_connected(server.id)
         if self.split.get_collapsed():
             self.split.set_show_sidebar(False)
 
-    def _open_tab(self, server: Server, argv: list[str], title: str, target: str, **texts) -> TerminalPage:
+    def _open_tab(self, server: Server, argv, title: str, target: str, **texts) -> TerminalPage:
         page_widget = TerminalPage(
             argv, self.theme, self.store.settings["terminal_font"], target,
             on_reconnect=lambda p: p.spawn(), **texts,
@@ -285,6 +303,19 @@ class PatchbayWindow(Adw.ApplicationWindow):
         self.theme.off(page.get_child().apply_colors)
         view.close_page_finish(page, True)  # Prozess endet mit dem PTY (SIGHUP)
         return Gdk.EVENT_STOP
+
+    def _auto_key_report(self, server: Server, outcome: Outcome, detail: str) -> None:
+        if outcome is Outcome.ADDED:
+            self.toast(f"Du hast dich per Passwort angemeldet. {detail} ist jetzt auf {server.name} "
+                       "eingetragen – nächstes Mal geht es ohne Passwort.", timeout=8)
+        elif outcome is Outcome.ALREADY_PRESENT:
+            self.toast(f"Dein Key ist auf {server.name} schon eingetragen, wurde aber nicht angenommen. "
+                       "Prüfe, ob er im ssh-agent geladen ist (ssh-add).", timeout=8)
+        elif outcome is Outcome.NO_PUBLIC_KEY:
+            self.toast(f"Anmeldung an {server.name} lief per Passwort. Für die automatische Übertragung fehlt "
+                       "ein Key – erzeuge einen mit „ssh-keygen -t ed25519“.", timeout=8)
+        else:
+            self.toast(f"Key ließ sich nicht auf {server.name} übertragen: {detail or 'unbekannter Fehler'}", timeout=8)
 
     def quick_connect(self, text: str) -> None:
         saved = self.store.find_by_name(text)
@@ -333,6 +364,11 @@ class PatchbayWindow(Adw.ApplicationWindow):
             act.connect("activate", lambda *_a, cb=cb: cb())
             self.add_action(act)
 
+        auto = Gio.SimpleAction.new_stateful(
+            "auto-copy-key", None, GLib.Variant.new_boolean(bool(self.store.settings.get("auto_copy_key"))))
+        auto.connect("change-state", self._toggle_auto_copy_key)
+        self.add_action(auto)
+
         per_server = {
             "server-connect": self.connect_server,
             "server-edit": self.edit_server,
@@ -345,6 +381,11 @@ class PatchbayWindow(Adw.ApplicationWindow):
             act = Gio.SimpleAction.new(name, GLib.VariantType.new("s"))
             act.connect("activate", self._server_action, cb)
             self.add_action(act)
+
+    def _toggle_auto_copy_key(self, action: Gio.SimpleAction, value: GLib.Variant) -> None:
+        action.set_state(value)
+        self.store.settings["auto_copy_key"] = value.get_boolean()
+        self.store.save()
 
     def _server_action(self, _act, param: GLib.Variant, cb) -> None:
         server = self.store.get(param.get_string())
@@ -462,7 +503,7 @@ class PatchbayWindow(Adw.ApplicationWindow):
     def _about(self) -> None:
         from .. import APP_ID, VERSION
         about = Adw.AboutDialog(
-            application_name="Patchbay", application_icon=APP_ID, version=VERSION,
+            application_name="easyShell", application_icon=APP_ID, version=VERSION,
             developer_name="Max", license_type=Gtk.License.GPL_3_0,
             comments="SSH-Server speichern, verwalten und mit einem Klick verbinden.",
         )

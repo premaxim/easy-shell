@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=Patchbay
+Name=easyShell
 GenericName=SSH-Verbindungen
 Comment=Home-Server speichern und mit einem Klick per SSH verbinden
-Exec=patchbay
-Icon=io.github.premaxim.Patchbay
+Exec=easyshell
+Icon=io.github.premaxim.EasyShell
 Terminal=false
 Categories=Network;RemoteAccess;System;
 Keywords=ssh;server;terminal;homelab;remote;

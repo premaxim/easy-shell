@@ -16,10 +16,10 @@ from . import APP_ID  # noqa: E402
 from .storage import ServerStore  # noqa: E402
 
 
-class PatchbayApp(Adw.Application):
+class EasyShellApp(Adw.Application):
     def __init__(self):
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
-        GLib.set_application_name("Patchbay")
+        GLib.set_application_name("easyShell")
         self.store = ServerStore()
         self.theme = None
 
@@ -36,16 +36,16 @@ class PatchbayApp(Adw.Application):
     def do_activate(self):
         window = self.get_active_window()
         if not window:
-            from .ui.window import PatchbayWindow
-            window = PatchbayWindow(self, self.store, self.theme)
-            if os.environ.get("PATCHBAY_SCREENSHOT"):
+            from .ui.window import EasyShellWindow
+            window = EasyShellWindow(self, self.store, self.theme)
+            if os.environ.get("EASYSHELL_SCREENSHOT"):
                 from .devtools import schedule_screenshot
-                schedule_screenshot(window, os.environ["PATCHBAY_SCREENSHOT"])
+                schedule_screenshot(window, os.environ["EASYSHELL_SCREENSHOT"])
         window.present()
 
 
 def main() -> int:
-    return PatchbayApp().run(sys.argv)
+    return EasyShellApp().run(sys.argv)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""JSON-Speicher unter $XDG_CONFIG_HOME/patchbay/servers.json.
+"""JSON-Speicher unter $XDG_CONFIG_HOME/easyshell/servers.json.
 
 Passwörter werden nie gespeichert – das Modell hat dafür gar kein Feld.
 """
@@ -13,12 +13,17 @@ from pathlib import Path
 from .models import Server
 
 FORMAT_VERSION = 1
-DEFAULT_SETTINGS = {"terminal_font": "JetBrains Mono 11"}
+DEFAULT_SETTINGS = {"terminal_font": "JetBrains Mono 11", "auto_copy_key": True}
 
 
 def config_dir() -> Path:
     base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
-    return Path(base) / "patchbay"
+    return Path(base) / "easyshell"
+
+
+def legacy_path() -> Path:
+    """Vor der Umbenennung hieß die App Patchbay."""
+    return config_dir().parent / "patchbay" / "servers.json"
 
 
 class ServerStore:
@@ -37,6 +42,10 @@ class ServerStore:
         self.servers = []
         self.settings = dict(DEFAULT_SETTINGS)
         self.load_warning = None
+        if not self.path.exists() and self.path == config_dir() / "servers.json" and legacy_path().exists():
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_bytes(legacy_path().read_bytes())
+            self.path.chmod(0o600)
         if not self.path.exists():
             return
         try:

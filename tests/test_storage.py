@@ -1,12 +1,12 @@
 import json
 import stat
 
-from patchbay.models import Server
-from patchbay.storage import ServerStore
+from easyshell.models import Server
+from easyshell.storage import ServerStore
 
 
 def make_store(tmp_path):
-    store = ServerStore(tmp_path / "patchbay" / "servers.json")
+    store = ServerStore(tmp_path / "easyshell" / "servers.json")
     store.load()
     return store
 
@@ -57,7 +57,7 @@ def test_update_duplicate_remove(tmp_path):
 
 
 def test_corrupt_file_is_backed_up(tmp_path):
-    path = tmp_path / "patchbay" / "servers.json"
+    path = tmp_path / "easyshell" / "servers.json"
     path.parent.mkdir(parents=True)
     path.write_text("{ kaputt")
     store = ServerStore(path)
@@ -93,3 +93,14 @@ def test_recent_and_group_color(tmp_path):
     assert [s.name for s in store.recent()] == ["c"]
     assert store.color_for_group("Spiele") == "green"
     assert store.groups() == ["Spiele"]
+
+
+def test_migrates_patchbay_data(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    old = tmp_path / "patchbay" / "servers.json"
+    old.parent.mkdir()
+    old.write_text(json.dumps({"servers": [{"name": "NAS", "host": "nas"}]}))
+    store = ServerStore()
+    store.load()
+    assert [s.name for s in store.servers] == ["NAS"]
+    assert (tmp_path / "easyshell" / "servers.json").exists()

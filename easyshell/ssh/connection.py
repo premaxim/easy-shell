@@ -2,7 +2,7 @@
 
 Die GNOME-Runtime bringt einen ssh-Client mit, daher läuft ssh normalerweise
 direkt in der Sandbox. Fehlt er (andere Runtime, eigener Build), weicht
-Patchbay auf ``flatpak-spawn --host ssh`` aus. Dafür braucht das Flatpak die
+easyShell auf ``flatpak-spawn --host ssh`` aus. Dafür braucht das Flatpak die
 Permission ``--talk-name=org.freedesktop.Flatpak`` (siehe README).
 """
 
@@ -12,6 +12,7 @@ import os
 import re
 import shlex
 import shutil
+import uuid
 from pathlib import Path
 from typing import Callable
 
@@ -64,8 +65,46 @@ def ssh_args(server: Server, resolve: Resolver | None = None) -> list[str]:
     return args
 
 
-def connect_argv(server: Server, resolve: Resolver | None = None) -> list[str]:
-    return host_prefix() + ssh_args(server, resolve)
+def connect_argv(server: Server, resolve: Resolver | None = None, control_path: Path | None = None) -> list[str]:
+    """Mit ``control_path`` wird die Sitzung ein ssh-ControlMaster: Weitere Befehle
+    (z. B. Key übertragen) laufen über die bestehende Verbindung, ohne erneute Anmeldung."""
+    control = ["-o", "ControlMaster=yes", "-o", f"ControlPath={control_path}", "-o", "ControlPersist=no"] \
+        if control_path else []
+    return host_prefix() + control + ssh_args(server, resolve)
+
+
+# ControlMaster ----------------------------------------------------------
+
+def multiplexing_available() -> bool:
+    """Über flatpak-spawn läge der Socket außerhalb der Sandbox – dann ohne Multiplexing."""
+    return host_prefix() == ["ssh"]
+
+
+def new_control_path() -> Path:
+    """Eindeutiger Socket pro Sitzung. Kurz halten: Unix-Sockets erlauben max. 108 Zeichen."""
+    runtime = Path(os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}")
+    app_id = os.environ.get("FLATPAK_ID")
+    base = runtime / "app" / app_id if app_id and (runtime / "app" / app_id).is_dir() else runtime / "easyshell"
+    base.mkdir(mode=0o700, parents=True, exist_ok=True)
+    return base / f"cm-{uuid.uuid4().hex[:12]}"
+
+
+def pubkey_probe_argv(server: Server, resolve: Resolver | None = None) -> list[str]:
+    """Neue Verbindung, die nur Keys versucht und nie nachfragt. Scheitert sie mit
+    „Permission denied“, hat ein Key allein nicht gereicht – der Login lief per Passwort."""
+    return host_prefix() + [
+        "-o", "BatchMode=yes", "-o", "PreferredAuthentications=publickey",
+        "-o", "ControlMaster=no", "-o", "ControlPath=none", "-o", "ConnectTimeout=10",
+        *ssh_args(server, resolve), "true",
+    ]
+
+
+def copy_id_via_master_argv(server: Server, pubkey: str, control_path: Path,
+                            resolve: Resolver | None = None) -> list[str]:
+    return host_prefix() + [
+        "-o", "ControlMaster=no", "-o", f"ControlPath={control_path}", "-o", "BatchMode=yes",
+        *ssh_args(server, resolve), copy_id_remote_command(pubkey),
+    ]
 
 
 def command_string(server: Server, resolve: Resolver | None = None) -> str:
@@ -95,18 +134,24 @@ def read_public_key(path: Path) -> str:
     return text
 
 
-def copy_id_argv(server: Server, pubkey: str, resolve: Resolver | None = None) -> list[str]:
-    """Entspricht ssh-copy-id: Key anhängen, wenn er noch nicht eingetragen ist.
+KEY_ADDED = "EASYSHELL_KEY_ADDED"
+KEY_PRESENT = "EASYSHELL_KEY_PRESENT"
 
-    ssh-copy-id ist nicht in der Runtime enthalten, daher bauen wir den
-    Remote-Befehl selbst. Ein Passwort-Prompt erscheint im Terminal.
-    """
+
+def copy_id_remote_command(pubkey: str, added: str = KEY_ADDED, present: str = KEY_PRESENT) -> str:
+    """Entspricht ssh-copy-id: Key anhängen, wenn er noch nicht eingetragen ist.
+    ssh-copy-id ist nicht in der Runtime enthalten, daher bauen wir den Befehl selbst."""
     quoted = shlex.quote(pubkey)
-    remote = (
+    return (
         "umask 077; mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && "
-        f"if grep -qxF {quoted} ~/.ssh/authorized_keys; then echo 'Key war schon eingetragen.'; "
-        f"else printf '%s\\n' {quoted} >> ~/.ssh/authorized_keys && echo 'Key eingetragen.'; fi"
+        f"if grep -qxF {quoted} ~/.ssh/authorized_keys; then echo {shlex.quote(present)}; "
+        f"else printf '%s\\n' {quoted} >> ~/.ssh/authorized_keys && echo {shlex.quote(added)}; fi"
     )
+
+
+def copy_id_argv(server: Server, pubkey: str, resolve: Resolver | None = None) -> list[str]:
+    """Manuelles „Key auf Server kopieren“ im Terminal-Tab – ein Passwort-Prompt erscheint dort."""
+    remote = copy_id_remote_command(pubkey, added="Key eingetragen.", present="Key war schon eingetragen.")
     return host_prefix() + [*ssh_args(server, resolve), remote]
 
 

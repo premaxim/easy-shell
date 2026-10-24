@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.premaxim.Patchbay</id>
+  <id>io.github.premaxim.EasyShell</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  <name>Patchbay</name>
+  <name>easyShell</name>
   <summary>Home-Server speichern und per SSH verbinden</summary>
   <description>
     <p>
-      Patchbay verwaltet deine SSH-Server wie ein Patchpanel: jeder Server ist ein Port mit
+      easyShell verwaltet deine SSH-Server wie ein Patchpanel: jeder Server ist ein Port mit
       Status-LED, jede Gruppe hat eine Kabelfarbe. Ein Klick öffnet die Verbindung als Tab mit
       eingebettetem Terminal.
     </p>
@@ -16,9 +16,10 @@
       <li>Import aus ~/.ssh/config mit Vorschau</li>
       <li>Jump-Hosts, eigene Keys, Notizen</li>
       <li>Keine gespeicherten Passwörter – Anmeldung über Keys und ssh-agent</li>
+      <li>Nach einem Passwort-Login wird der eigene Key automatisch eingetragen</li>
     </ul>
   </description>
-  <launchable type="desktop-id">io.github.premaxim.Patchbay.desktop</launchable>
+  <launchable type="desktop-id">io.github.premaxim.EasyShell.desktop</launchable>
   <developer id="io.github.premaxim">
     <name>Max</name>
   </developer>
@@ -36,6 +37,9 @@
     <control>touch</control>
   </supports>
   <releases>
+    <release version="0.2.0" date="2026-10-24">
+      <description><p>Neuer Name easyShell. Nach einem Passwort-Login wird der eigene Key automatisch auf den Server übertragen.</p></description>
+    </release>
     <release version="0.1.0" date="2026-10-23">
       <description><p>Erste Version (MVP).</p></description>
     </release>

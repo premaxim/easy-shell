@@ -1,9 +1,9 @@
 {
-  "id": "io.github.premaxim.Patchbay",
+  "id": "io.github.premaxim.EasyShell",
   "runtime": "org.gnome.Platform",
   "runtime-version": "51",
   "sdk": "org.gnome.Sdk",
-  "command": "patchbay",
+  "command": "easyshell",
   "finish-args": [
     "--share=ipc",
     "--socket=wayland",
@@ -77,17 +77,17 @@
       ]
     },
     {
-      "name": "patchbay",
+      "name": "easyshell",
       "buildsystem": "simple",
       "build-commands": [
-        "mkdir -p /app/share/patchbay",
-        "cp -r patchbay /app/share/patchbay/",
-        "find /app/share/patchbay -name __pycache__ -prune -exec rm -rf {} +",
-        "python3 -m compileall -q /app/share/patchbay",
-        "install -Dm755 data/patchbay.sh /app/bin/patchbay",
-        "install -Dm644 data/io.github.premaxim.Patchbay.desktop -t /app/share/applications",
-        "install -Dm644 data/io.github.premaxim.Patchbay.metainfo.xml -t /app/share/metainfo",
-        "install -Dm644 data/icons/io.github.premaxim.Patchbay.svg -t /app/share/icons/hicolor/scalable/apps"
+        "mkdir -p /app/share/easyshell",
+        "cp -r easyshell /app/share/easyshell/",
+        "find /app/share/easyshell -name __pycache__ -prune -exec rm -rf {} +",
+        "python3 -m compileall -q /app/share/easyshell",
+        "install -Dm755 data/easyshell.sh /app/bin/easyshell",
+        "install -Dm644 data/io.github.premaxim.EasyShell.desktop -t /app/share/applications",
+        "install -Dm644 data/io.github.premaxim.EasyShell.metainfo.xml -t /app/share/metainfo",
+        "install -Dm644 data/icons/io.github.premaxim.EasyShell.svg -t /app/share/icons/hicolor/scalable/apps"
       ],
       "sources": [
         {

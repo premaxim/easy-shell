@@ -18,7 +18,7 @@ SSH_UNREACHABLE = 255  # ssh meldet Verbindungsfehler mit Exit-Code 255
 class TerminalPage(Gtk.Box):
     def __init__(
         self,
-        argv: list[str],
+        argv: list[str] | Callable[[], list[str]],
         app_theme: theme.Theme,
         font: str,
         target_label: str,
@@ -27,7 +27,8 @@ class TerminalPage(Gtk.Box):
         failure_text: str | None = None,
     ):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
-        self.argv = argv
+        # Eine Funktion statt fester Liste: jeder (Neu-)Start bekommt z. B. einen frischen ControlMaster-Socket.
+        self._argv = argv
         self.exited = False
         self._theme = app_theme
         self._on_reconnect = on_reconnect
@@ -70,10 +71,11 @@ class TerminalPage(Gtk.Box):
         self.exited = False
         self.banner.set_revealed(False)
         self.terminal.reset(True, True)
+        argv = self._argv() if callable(self._argv) else self._argv
         self.terminal.spawn_async(
             Vte.PtyFlags.DEFAULT,
             os.path.expanduser("~"),
-            self.argv,
+            argv,
             ["TERM=xterm-256color"],
             GLib.SpawnFlags.SEARCH_PATH,
             None, None,
@@ -108,6 +110,10 @@ class TerminalPage(Gtk.Box):
             self.banner.set_title(f"Sitzung mit Code {code} beendet.")
             self.banner.remove_css_class("pb-exit-error")
         self.banner.set_revealed(True)
+
+    def alive(self) -> bool:
+        """Läuft der Prozess noch und ist der Tab offen?"""
+        return not self.exited and self.get_root() is not None
 
     # Aussehen -----------------------------------------------------------
 

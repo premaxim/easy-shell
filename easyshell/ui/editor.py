@@ -48,7 +48,7 @@ class ServerEditor(Adw.Dialog):
         # Anmeldung
         auth = Adw.PreferencesGroup(
             title="Anmeldung",
-            description="Patchbay speichert keine Passwörter. Fragt der Server danach, "
+            description="easyShell speichert keine Passwörter. Fragt der Server danach, "
             "erscheint die Abfrage im Terminal.",
         )
         self.key_row = Adw.ActionRow(title="SSH-Key")

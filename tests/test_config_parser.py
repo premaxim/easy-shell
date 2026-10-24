@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from patchbay.ssh.config_parser import parse_ssh_config
+from easyshell.ssh.config_parser import parse_ssh_config
 
 CONFIG = """
 # globale Option vor dem ersten Host

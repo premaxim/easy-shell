@@ -1,4 +1,4 @@
-# Patchbay – Design-Plan
+# easyShell – Design-Plan
 
 ## Leitidee
 
@@ -77,7 +77,7 @@ Nur libadwaita-eigene Übergänge (Tab öffnen, Dialog, Split-View) und eine
 ## Abschlussprüfung („Chanel-Regel“)
 
 Nach den ersten Screenshots habe ich ein Element entfernt: den **App-Titel
-„Patchbay“ in der Kopfleiste der Seitenleiste**. Er wiederholte nur den
+„easyShell“ in der Kopfleiste der Seitenleiste**. Er wiederholte nur den
 Fenstertitel. Die Suche nimmt jetzt seinen Platz ein. Das spart auf dem
 Steam Deck (800 px Höhe) eine ganze Zeile, und die Seitenleiste beginnt direkt
 mit dem, was man dort tut: suchen und verbinden.
