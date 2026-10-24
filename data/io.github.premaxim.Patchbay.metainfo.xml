@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.premaxim.Patchbay</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Patchbay</name>
+  <summary>Home-Server speichern und per SSH verbinden</summary>
+  <description>
+    <p>
+      Patchbay verwaltet deine SSH-Server wie ein Patchpanel: jeder Server ist ein Port mit
+      Status-LED, jede Gruppe hat eine Kabelfarbe. Ein Klick öffnet die Verbindung als Tab mit
+      eingebettetem Terminal.
+    </p>
+    <ul>
+      <li>Live-Status per TCP-Check auf den SSH-Port</li>
+      <li>Import aus ~/.ssh/config mit Vorschau</li>
+      <li>Jump-Hosts, eigene Keys, Notizen</li>
+      <li>Keine gespeicherten Passwörter – Anmeldung über Keys und ssh-agent</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.premaxim.Patchbay.desktop</launchable>
+  <developer id="io.github.premaxim">
+    <name>Max</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+  <branding>
+    <color type="primary" scheme_preference="light">#EEF3F6</color>
+    <color type="primary" scheme_preference="dark">#14202B</color>
+  </branding>
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+  <releases>
+    <release version="0.1.0" date="2026-10-23">
+      <description><p>Erste Version (MVP).</p></description>
+    </release>
+  </releases>
+</component>

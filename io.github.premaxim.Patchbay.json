@@ -1,0 +1,101 @@
+{
+  "id": "io.github.premaxim.Patchbay",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "51",
+  "sdk": "org.gnome.Sdk",
+  "command": "patchbay",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--device=dri",
+    "--share=network",
+    "--socket=ssh-auth",
+    "--filesystem=~/.ssh"
+  ],
+  "cleanup": [
+    "/include",
+    "/lib/pkgconfig",
+    "/share/gir-1.0",
+    "/share/vala",
+    "*.a",
+    "*.la"
+  ],
+  "modules": [
+    {
+      "name": "vte",
+      "buildsystem": "meson",
+      "config-opts": [
+        "-Dgtk3=false",
+        "-Dgtk4=true",
+        "-Dgir=true",
+        "-Dvapi=false",
+        "-Ddocs=false",
+        "-Dglade=false",
+        "-Dapp=false",
+        "-Dicu=false",
+        "-Dgnutls=false",
+        "-D_systemd=false"
+      ],
+      "cleanup": ["/bin", "/etc", "/libexec", "/share/locale"],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://download.gnome.org/sources/vte/0.84/vte-0.84.1.tar.xz",
+          "sha256": "aca1caa8478aebcdbb1d67897fb3511eb7601debae6810e16a15b6fa25f31ac8"
+        }
+      ]
+    },
+    {
+      "name": "fonts",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -Dm644 -t /app/share/fonts/atkinson-hyperlegible-next AtkinsonHyperlegibleNext.ttf AtkinsonHyperlegibleNext-Italic.ttf",
+        "install -Dm644 -t /app/share/fonts/jetbrains-mono jetbrains/fonts/variable/*.ttf",
+        "install -Dm644 jetbrains/OFL.txt /app/share/licenses/fonts/JetBrainsMono-OFL.txt"
+      ],
+      "sources": [
+        {
+          "type": "file",
+          "url": "https://raw.githubusercontent.com/googlefonts/atkinson-hyperlegible-next/7925f50f649b3813257faf2f4c0b381011f434f1/fonts/variable/AtkinsonHyperlegibleNext%5Bwght%5D.ttf",
+          "sha256": "5a455d1cfa099b601ab70751bb9673e8fe1854dc4500c80e1a220d0d75e31745",
+          "dest-filename": "AtkinsonHyperlegibleNext.ttf"
+        },
+        {
+          "type": "file",
+          "url": "https://raw.githubusercontent.com/googlefonts/atkinson-hyperlegible-next/7925f50f649b3813257faf2f4c0b381011f434f1/fonts/variable/AtkinsonHyperlegibleNext-Italic%5Bwght%5D.ttf",
+          "sha256": "ce9cffed32742ad2d9238c561a93220385e5934cdc02b8eb4097a50efa957dc6",
+          "dest-filename": "AtkinsonHyperlegibleNext-Italic.ttf"
+        },
+        {
+          "type": "archive",
+          "url": "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip",
+          "sha256": "6f6376c6ed2960ea8a963cd7387ec9d76e3f629125bc33d1fdcd7eb7012f7bbf",
+          "dest": "jetbrains",
+          "strip-components": 0
+        }
+      ]
+    },
+    {
+      "name": "patchbay",
+      "buildsystem": "simple",
+      "build-commands": [
+        "mkdir -p /app/share/patchbay",
+        "cp -r patchbay /app/share/patchbay/",
+        "find /app/share/patchbay -name __pycache__ -prune -exec rm -rf {} +",
+        "python3 -m compileall -q /app/share/patchbay",
+        "install -Dm755 data/patchbay.sh /app/bin/patchbay",
+        "install -Dm644 data/io.github.premaxim.Patchbay.desktop -t /app/share/applications",
+        "install -Dm644 data/io.github.premaxim.Patchbay.metainfo.xml -t /app/share/metainfo",
+        "install -Dm644 data/icons/io.github.premaxim.Patchbay.svg -t /app/share/icons/hicolor/scalable/apps"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": ".",
+          "skip": [".git", ".flatpak-builder", "build-dir", "repo", "dist", "tests"]
+        }
+      ]
+    }
+  ]
+}

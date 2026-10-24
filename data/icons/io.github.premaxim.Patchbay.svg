@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Patchpanel-Front: drei Ports mit LED, ein blaues Kabel steckt im mittleren -->
+  <rect x="8" y="24" width="112" height="64" rx="10" fill="#14202B"/>
+  <rect x="8" y="24" width="112" height="64" rx="10" fill="none" stroke="#2C4152" stroke-width="2"/>
+  <g fill="#1B2B39" stroke="#2C4152" stroke-width="2">
+    <rect x="20" y="44" width="22" height="20" rx="3"/>
+    <rect x="53" y="44" width="22" height="20" rx="3"/>
+    <rect x="86" y="44" width="22" height="20" rx="3"/>
+  </g>
+  <circle cx="31" cy="35" r="3.5" fill="#5DB98C"/>
+  <circle cx="64" cy="35" r="3.5" fill="#5DB98C"/>
+  <circle cx="97" cy="35" r="3" fill="none" stroke="#CC6470" stroke-width="2"/>
+  <path d="M64 58 C64 92 40 96 40 120" fill="none" stroke="#4A8BD4" stroke-width="9" stroke-linecap="round"/>
+  <rect x="56" y="48" width="16" height="14" rx="2" fill="#4A8BD4"/>
+</svg>

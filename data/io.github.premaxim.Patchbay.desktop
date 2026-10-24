@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Patchbay
+GenericName=SSH-Verbindungen
+Comment=Home-Server speichern und mit einem Klick per SSH verbinden
+Exec=patchbay
+Icon=io.github.premaxim.Patchbay
+Terminal=false
+Categories=Network;RemoteAccess;System;
+Keywords=ssh;server;terminal;homelab;remote;
+StartupNotify=true
